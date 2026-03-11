@@ -102,7 +102,7 @@ export default function EditExperiment() {
         }
         if (data.id) {
           setExpDbId(data.id);
-          const expFiles = await getFilesForExperiment(data.id);
+          const expFiles = await getFilesForExperiment(data.id, undefined, data.experiment_id);
           setExistingFiles(expFiles);
           const urls: Record<number, string> = {};
           for (const f of expFiles) {

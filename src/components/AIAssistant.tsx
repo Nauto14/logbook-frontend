@@ -116,9 +116,23 @@ export default function AIAssistant() {
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-text-primary mb-2">Coming Soon</h3>
-            <p className="text-sm text-text-secondary mb-6 max-w-sm mx-auto">
+            <p className="text-sm text-text-secondary mb-8 max-w-sm mx-auto">
               Our natural language interface for automatically analyzing your experimental logs is currently under active development.
             </p>
+            <div className="max-w-xl mx-auto">
+              <p className="text-xs font-semibold text-text-secondary uppercase tracking-widest mb-4">Example Questions you can ask</p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {exampleQuestions.map((q, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setInput(q)}
+                    className="text-left bg-white border border-slate-200 hover:border-indigo-300 hover:bg-slate-50 text-slate-600 text-[13px] py-2 px-4 rounded-xl transition-all shadow-sm"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -174,14 +188,12 @@ export default function AIAssistant() {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="AI Assistant is currently under development and will be available soon."
-          className="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-text-primary placeholder:text-text-secondary focus:border-indigo-300 focus:ring-1 focus:ring-indigo-300 transition-colors text-sm cursor-not-allowed opacity-70"
-          disabled={true}
+          placeholder="Ask a question about your experiments..."
+          className="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-text-primary placeholder:text-text-secondary focus:border-indigo-300 focus:ring-1 focus:ring-indigo-300 transition-colors text-sm"
         />
         <button
           type="submit"
-          disabled={true}
-          className="px-5 py-2.5 rounded-xl bg-slate-300 text-white font-semibold text-sm shadow-sm cursor-not-allowed transition-all"
+          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-accent to-secondary-accent text-white font-semibold text-sm shadow-sm hover:shadow-md transition-all active:scale-95"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />

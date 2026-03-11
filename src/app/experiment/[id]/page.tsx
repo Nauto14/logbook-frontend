@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { getExperiment } from '@/lib/experimentStore';
-import { getFilesForExperiment, deleteFile as deleteFileRecord } from '@/lib/experimentStore';
+import { useRouter, useParams } from 'next/navigation';
+import { getExperiment, getFilesForExperiment, deleteFile as deleteFileRecord } from '@/lib/experimentStore';
 import type { ExperimentRecord, FileRecord } from '@/lib/db';
+import Zoom from 'react-medium-image-zoom';
+import 'react-medium-image-zoom/dist/styles.css';
 
-export default function ExperimentDetail() {
+export default function ExperimentDetails() {
   const params = useParams();
   const id = params.id as string;
   const [experiment, setExperiment] = useState<ExperimentRecord | null>(null);
@@ -24,7 +25,7 @@ export default function ExperimentDetail() {
       setExperiment(exp);
 
       if (exp.id) {
-        const expFiles = await getFilesForExperiment(exp.id);
+        const expFiles = await getFilesForExperiment(exp.id, undefined, exp.experiment_id);
         setFiles(expFiles);
         // Create blob URLs for display
         const urls: Record<number, string> = {};
@@ -100,12 +101,14 @@ export default function ExperimentDetail() {
           {categoryFiles.map((f) => (
             <div key={f.id} className="relative group rounded-lg overflow-hidden border border-slate-200 print:border-slate-300 print:rounded-xl">
               {f.id && fileUrls[f.id] && (
-                <img src={fileUrls[f.id]} alt={f.fileName} className="w-full h-32 object-cover print:h-auto print:max-h-80" />
+                <Zoom>
+                  <img src={fileUrls[f.id]} alt={f.fileName} className="w-full h-32 object-cover print:h-auto print:max-h-80" />
+                </Zoom>
               )}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-start justify-end p-1.5 print:hidden">
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-start justify-end p-1.5 print:hidden pointer-events-none">
                 <button
                   onClick={() => f.id && handleDeleteFile(f.id)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 shadow-lg"
+                  className="pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 shadow-lg"
                   title="Delete image"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
