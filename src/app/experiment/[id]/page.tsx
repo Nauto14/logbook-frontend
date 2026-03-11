@@ -94,15 +94,15 @@ export default function ExperimentDetail() {
     const categoryFiles = getFilesByCategory(category);
     if (categoryFiles.length === 0) return null;
     return (
-      <div className="mt-4">
-        <h4 className="text-sm font-semibold text-label mb-2">{title}</h4>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="mt-4 break-inside-avoid">
+        <h4 className="text-sm font-semibold text-label mb-2 print:text-lg">{title}</h4>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 print:grid-cols-2 print:gap-6">
           {categoryFiles.map((f) => (
-            <div key={f.id} className="relative group rounded-lg overflow-hidden border border-slate-200">
+            <div key={f.id} className="relative group rounded-lg overflow-hidden border border-slate-200 print:border-slate-300 print:rounded-xl">
               {f.id && fileUrls[f.id] && (
-                <img src={fileUrls[f.id]} alt={f.fileName} className="w-full h-32 object-cover" />
+                <img src={fileUrls[f.id]} alt={f.fileName} className="w-full h-32 object-cover print:h-auto print:max-h-80" />
               )}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-start justify-end p-1.5">
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-start justify-end p-1.5 print:hidden">
                 <button
                   onClick={() => f.id && handleDeleteFile(f.id)}
                   className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 shadow-lg"
@@ -113,7 +113,7 @@ export default function ExperimentDetail() {
                   </svg>
                 </button>
               </div>
-              <div className="px-2 py-1 bg-slate-50 text-xs text-text-secondary truncate">{f.fileName}</div>
+              <div className="px-2 py-1 bg-slate-50 text-xs text-text-secondary truncate print:whitespace-normal print:bg-white print:text-sm">{f.fileName}</div>
             </div>
           ))}
         </div>
@@ -192,12 +192,12 @@ export default function ExperimentDetail() {
           <p className="text-sm text-slate-600">ID: {experiment.experiment_id} | {experiment.date} {experiment.start_time} | {experiment.researcher}</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 print:block">
           <div className="md:col-span-2 space-y-8">
             {/* Scientific Context */}
-            <div className="bg-white/70 backdrop-blur-xl shadow-sm border border-white rounded-[2.5rem] p-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
-              <h3 className="text-2xl font-black mb-8 text-[#1F2937] tracking-tight flex items-center">
-                <span className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center mr-4 text-accent">
+            <div className="bg-white/70 print:bg-transparent backdrop-blur-xl print:backdrop-blur-none shadow-sm print:shadow-none border border-white print:border-none rounded-[2.5rem] print:rounded-none p-10 print:p-0 print:mb-8 break-inside-avoid animate-in fade-in slide-in-from-bottom-8 duration-700">
+              <h3 className="text-2xl font-black mb-8 text-[#1F2937] tracking-tight flex items-center print:text-xl print:mb-4">
+                <span className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center mr-4 text-accent print:hidden">
                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 </span>
                 Research Narrative
@@ -227,9 +227,9 @@ export default function ExperimentDetail() {
             </div>
 
             {/* Session Notes & Images */}
-            <div className="bg-white/70 backdrop-blur-xl shadow-sm border border-white rounded-[2.5rem] p-10 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
-              <h3 className="text-2xl font-black mb-8 text-[#1F2937] tracking-tight flex items-center">
-                <span className="w-8 h-8 rounded-lg bg-secondary-accent/10 flex items-center justify-center mr-4 text-secondary-accent">
+            <div className="bg-white/70 print:bg-transparent backdrop-blur-xl print:backdrop-blur-none shadow-sm print:shadow-none border border-white print:border-none rounded-[2.5rem] print:rounded-none p-10 print:p-0 print:mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+              <h3 className="text-2xl font-black mb-8 text-[#1F2937] tracking-tight flex items-center print:text-xl print:mb-4">
+                <span className="w-8 h-8 rounded-lg bg-secondary-accent/10 flex items-center justify-center mr-4 text-secondary-accent print:hidden">
                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </span>
                 Event Timeline
@@ -237,8 +237,8 @@ export default function ExperimentDetail() {
               {experiment.timeline_entries && experiment.timeline_entries.length > 0 ? (
                 <div className="space-y-6 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100 pl-8">
                   {experiment.timeline_entries.map((tl, idx) => (
-                    <div key={idx} className="relative text-base text-text-primary p-6 bg-white/50 rounded-2xl border border-white/50 shadow-sm">
-                      <div className="absolute -left-[27px] top-7 w-3 h-3 rounded-full bg-accent border-2 border-white shadow-sm font-bold"></div>
+                    <div key={idx} className="relative text-base text-text-primary p-6 bg-white/50 print:bg-transparent rounded-2xl print:rounded-none border border-white/50 print:border-none print:border-l-4 print:border-l-slate-300 shadow-sm print:shadow-none break-inside-avoid">
+                      <div className="absolute -left-[27px] top-7 w-3 h-3 rounded-full bg-accent border-2 border-white shadow-sm font-bold print:hidden"></div>
                       <div className="mb-3 flex items-center justify-between">
                         <span className="px-2 py-0.5 bg-accent/10 rounded-lg text-[10px] font-black tracking-widest text-accent border border-accent/10 uppercase">{tl.entry_type}</span>
                         <span className="text-[#9CA3AF] font-mono text-[10px] font-black uppercase tracking-widest">{tl.timestamp.replace('T', ' ')}</span>
@@ -291,41 +291,70 @@ export default function ExperimentDetail() {
             </div>
 
             {/* Datasets */}
-            <div className="bg-white/70 backdrop-blur-xl shadow-sm border border-white rounded-[2.5rem] p-10 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-              <h3 className="text-2xl font-black mb-8 text-[#1F2937] tracking-tight flex items-center">
-                <span className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center mr-4 text-green-600">
+            <div className="bg-white/70 print:bg-transparent backdrop-blur-xl print:backdrop-blur-none shadow-sm print:shadow-none border border-white print:border-none rounded-[2.5rem] print:rounded-none p-10 print:p-0 print:mb-8 break-inside-avoid animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+              <h3 className="text-2xl font-black mb-8 text-[#1F2937] tracking-tight flex items-center print:text-xl print:mb-4">
+                <span className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center mr-4 text-green-600 print:hidden">
                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 7v10c0 1.105 2.239 2 5 2s5-.895 5-2V7M4 7c0 1.105 2.239 2 5 2s5-.895 5-2M4 7c0-1.105 2.239-2 5-2s5 .895 5 2m0 5c0 1.105-2.239 2-5 2s-5-.895-5-2"></path></svg>
                 </span>
                 Raw Datasets
               </h3>
               {experiment.datasets && experiment.datasets.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {experiment.datasets.map((ds, idx) => (
-                    <div key={idx} className="text-sm p-6 bg-white shadow-sm rounded-2xl border border-slate-100 group hover:border-accent/30 transition-colors">
-                      <div className="font-black text-[#1F2937] flex justify-between items-start mb-4">
-                        <span className="truncate pr-2">{ds.file_name}</span>
-                        {ds.dataset_group_name && <span className="bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100 text-[9px] uppercase tracking-widest text-[#9CA3AF]">{ds.dataset_group_name}</span>}
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 print:hidden">
+                    {experiment.datasets.map((ds, idx) => (
+                      <div key={idx} className="text-sm p-6 bg-white shadow-sm rounded-2xl border border-slate-100 group hover:border-accent/30 transition-colors">
+                        <div className="font-black text-[#1F2937] flex justify-between items-start mb-4">
+                          <span className="truncate pr-2">{ds.file_name}</span>
+                          {ds.dataset_group_name && <span className="bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100 text-[9px] uppercase tracking-widest text-[#9CA3AF]">{ds.dataset_group_name}</span>}
+                        </div>
+                        <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-[10px] font-black uppercase tracking-wider text-[#6B7280]">
+                          {ds.integration_time_s && <div><span className="text-accent/50 mr-1.5">•</span>Int {ds.integration_time_s}s</div>}
+                          {ds.accumulations && <div><span className="text-accent/50 mr-1.5">•</span>Acc {ds.accumulations}</div>}
+                          {ds.laser_power_mW && <div><span className="text-accent/50 mr-1.5">•</span>Pwr {ds.laser_power_mW}mW</div>}
+                          {ds.temperature_K && <div><span className="text-accent/50 mr-1.5">•</span>Temp {ds.temperature_K}K</div>}
+                        </div>
+                        {ds.comments && <div className="mt-4 text-[11px] font-medium text-[#4B5563] italic border-t border-slate-50 pt-3">{ds.comments}</div>}
                       </div>
-                      <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-[10px] font-black uppercase tracking-wider text-[#6B7280]">
-                        {ds.integration_time_s && <div><span className="text-accent/50 mr-1.5">•</span>Int {ds.integration_time_s}s</div>}
-                        {ds.accumulations && <div><span className="text-accent/50 mr-1.5">•</span>Acc {ds.accumulations}</div>}
-                        {ds.laser_power_mW && <div><span className="text-accent/50 mr-1.5">•</span>Pwr {ds.laser_power_mW}mW</div>}
-                        {ds.temperature_K && <div><span className="text-accent/50 mr-1.5">•</span>Temp {ds.temperature_K}K</div>}
-                      </div>
-                      {ds.comments && <div className="mt-4 text-[11px] font-medium text-[#4B5563] italic border-t border-slate-50 pt-3">{ds.comments}</div>}
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                  {/* Print Table */}
+                  <div className="hidden print:block w-full overflow-hidden text-sm border border-slate-300 rounded-lg">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-slate-100 border-b-2 border-slate-300">
+                        <tr>
+                          <th className="py-2 px-3 font-bold text-xs uppercase tracking-wider text-slate-700">Filename</th>
+                          <th className="py-2 px-3 font-bold text-xs uppercase tracking-wider text-slate-700">Group</th>
+                          <th className="py-2 px-3 font-bold text-xs uppercase tracking-wider text-slate-700">Int (s)</th>
+                          <th className="py-2 px-3 font-bold text-xs uppercase tracking-wider text-slate-700">Acc</th>
+                          <th className="py-2 px-3 font-bold text-xs uppercase tracking-wider text-slate-700">Pwr (mW)</th>
+                          <th className="py-2 px-3 font-bold text-xs uppercase tracking-wider text-slate-700">Temp (K)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {experiment.datasets.map((ds, idx) => (
+                           <tr key={idx} className="bg-white">
+                             <td className="py-2 px-3 font-mono text-xs">{ds.file_name}</td>
+                             <td className="py-2 px-3">{ds.dataset_group_name || '-'}</td>
+                             <td className="py-2 px-3">{ds.integration_time_s || '-'}</td>
+                             <td className="py-2 px-3">{ds.accumulations || '-'}</td>
+                             <td className="py-2 px-3">{ds.laser_power_mW || '-'}</td>
+                             <td className="py-2 px-3">{ds.temperature_K || '-'}</td>
+                           </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               ) : <p className="text-base text-text-secondary italic">No datasets attached yet.</p>}
             </div>
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-8">
+          <div className="space-y-8 print:space-y-4">
             {/* Sample */}
-            <div className="bg-white/70 backdrop-blur-xl shadow-sm border border-white rounded-[2.5rem] p-10 animate-in fade-in slide-in-from-right-8 duration-1000">
-              <h3 className="text-xl font-black mb-8 text-[#1F2937] tracking-tight flex items-center">
-                <span className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center mr-4 text-orange-600">
+            <div className="bg-white/70 print:bg-transparent backdrop-blur-xl print:backdrop-blur-none shadow-sm print:shadow-none border border-white print:border-none rounded-[2.5rem] print:rounded-none p-10 print:p-0 print:mb-8 break-inside-avoid animate-in fade-in slide-in-from-right-8 duration-1000">
+              <h3 className="text-xl font-black mb-8 text-[#1F2937] tracking-tight flex items-center print:text-xl print:mb-4">
+                <span className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center mr-4 text-orange-600 print:hidden">
                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
                 </span>
                 Material
@@ -358,8 +387,8 @@ export default function ExperimentDetail() {
             </div>
 
             {/* Instrument Setup */}
-            <div className="bg-white/40 backdrop-blur-md shadow-sm border border-white/50 rounded-[2.5rem] p-10 animate-in fade-in slide-in-from-right-8 duration-1000 delay-100">
-              <h3 className="text-xl font-black mb-8 text-[#1F2937] tracking-tight">System Modules</h3>
+            <div className="bg-white/40 print:bg-transparent backdrop-blur-md print:backdrop-blur-none shadow-sm print:shadow-none border border-white/50 print:border-none rounded-[2.5rem] print:rounded-none p-10 print:p-0 print:mb-8 break-inside-avoid animate-in fade-in slide-in-from-right-8 duration-1000 delay-100">
+              <h3 className="text-xl font-black mb-8 text-[#1F2937] tracking-tight print:mb-4">System Modules</h3>
               
               <div className="space-y-6">
                 {experiment.laser_optics_module && (
