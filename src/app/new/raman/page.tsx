@@ -9,6 +9,8 @@ import { TimelineNotes } from '@/components/TimelineNotes';
 import { DatasetUploader } from '@/components/DatasetUploader';
 import { PolarizationModule } from '@/components/PolarizationModule';
 import { createExperiment, saveFile } from '@/lib/experimentStore';
+import { db } from '@/lib/db';
+import { ImageDropzone } from '@/components/ImageDropzone';
 
 export default function NewExperimentV2() {
   const router = useRouter();
@@ -34,7 +36,6 @@ export default function NewExperimentV2() {
     tags: '',
   });
 
-  // 2. Sample
   const [sample, setSample] = useState({
     sample_id: `SAMP-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
     sample_name: '',
@@ -79,7 +80,9 @@ export default function NewExperimentV2() {
     preliminary_impression: '',
     challenges_faced: '',
     things_to_improve: '',
-    things_that_worked_nicely: ''
+    things_that_worked_nicely: '',
+    final_summary: '',
+    conclusions: ''
   });
 
   // 8. Physical Files State
@@ -91,6 +94,53 @@ export default function NewExperimentV2() {
   const handleSampleChange = (e: any) => setSample({ ...sample, [e.target.name]: e.target.value });
   const handleReflectionChange = (e: any) => setReflection({ ...reflection, [e.target.name]: e.target.value });
   const toggleModule = (modName: string) => setModules({ ...modules, [modName]: !modules[modName as keyof typeof modules] });
+
+  // Autosave Draft
+  useEffect(() => {
+    if (!user) return;
+    const saveDraft = async () => {
+      const draftData = {
+        metadata,
+        sample,
+        modules,
+        tempData,
+        pressureData,
+        opticsData,
+        polarData,
+        timeline,
+        reflection,
+        // (files/images omitted from quick draft, stored separately)
+      };
+      // Keep it simple, purely using LocalStorage for the quick form draft. 
+      // Saving files in real-time is too heavy, we save the text state.
+      localStorage.setItem(`raman-draft-${user.id}`, JSON.stringify(draftData));
+    };
+
+    const timer = setTimeout(saveDraft, 1000);
+    return () => clearTimeout(timer);
+  }, [metadata, sample, modules, tempData, pressureData, opticsData, polarData, timeline, reflection, user]);
+
+  // Load Draft on Mount
+  useEffect(() => {
+    if (!user) return;
+    const savedDraft = localStorage.getItem(`raman-draft-${user.id}`);
+    if (savedDraft) {
+      try {
+        const parsed = JSON.parse(savedDraft);
+        if (parsed.metadata) setMetadata(parsed.metadata);
+        if (parsed.sample) setSample(parsed.sample);
+        if (parsed.modules) setModules(parsed.modules);
+        if (parsed.tempData) setTempData(parsed.tempData);
+        if (parsed.pressureData) setPressureData(parsed.pressureData);
+        if (parsed.opticsData) setOpticsData(parsed.opticsData);
+        if (parsed.polarData) setPolarData(parsed.polarData);
+        if (parsed.timeline) setTimeline(parsed.timeline);
+        if (parsed.reflection) setReflection(parsed.reflection);
+      } catch (e) {
+        console.error("Failed to load draft form data", e);
+      }
+    }
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,6 +244,9 @@ export default function NewExperimentV2() {
         }
       }
 
+      // Clear draft on successful save
+      localStorage.removeItem(`raman-draft-${user.id}`);
+
       router.push('/');
       router.refresh();
       
@@ -205,15 +258,29 @@ export default function NewExperimentV2() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto pb-12">
-      <div className="md:flex md:items-center md:justify-between mb-8">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-3xl font-bold text-text-primary tracking-tight">
-            New Raman Experiment Session
-          </h2>
-          <p className="mt-2 text-base text-text-secondary">Configure your campaign, modular conditions, and session context. Data saved locally.</p>
-        </div>
+    <div className="max-w-7xl mx-auto pb-20 relative px-4 sm:px-6 lg:px-8">
+      {/* Mesh Background for Form Page */}
+      <div className="absolute inset-x-0 -top-24 -bottom-24 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[5%] left-[-10%] w-[50%] h-[50%] bg-accent/5 blur-[120px] rounded-full animate-blob"></div>
+        <div className="absolute top-[30%] right-[-10%] w-[45%] h-[45%] bg-secondary-accent/5 blur-[100px] rounded-full animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-[10%] left-[15%] w-[40%] h-[40%] bg-tertiary-accent/5 blur-[80px] rounded-full animate-blob animation-delay-4000"></div>
       </div>
+
+      <div className="relative z-10 pt-12">
+        <div className="md:flex md:items-end md:justify-between mb-16 pb-12 border-b border-white/40">
+          <div className="min-w-0 flex-1 animate-in fade-in slide-in-from-left-4 duration-1000">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-accent/20">
+              New Session Initiation
+            </span>
+            <h2 className="text-5xl sm:text-7xl font-black leading-[0.9] text-[#1F2937] sm:truncate tracking-tight">
+              Raman <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary-accent">Experiment</span>
+            </h2>
+            <p className="mt-8 text-xl text-[#6B7280] font-medium max-w-xl">
+              Configure your campaign, modular conditions, and session context. <span className="text-accent underline decoration-accent/30 underline-offset-8">All data is local.</span>
+            </p>
+          </div>
+        </div>
 
       {error && (
         <div className="rounded-xl bg-red-50/50 p-4 mb-6 border border-red-200">
@@ -225,8 +292,8 @@ export default function NewExperimentV2() {
       <form onSubmit={handleSubmit} className="space-y-8">
         
         {/* Core Metadata Card */}
-        <div className="bg-card-bg shadow-sm border border-border-custom sm:rounded-2xl p-8 transition-colors">
-          <h3 className="text-xl font-semibold leading-6 text-text-primary border-b border-border-custom pb-4 text-accent">Experiment Overview</h3>
+        <div className="bg-white/70 backdrop-blur-xl shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] border border-white rounded-[2.5rem] p-10 mb-10 transition-all duration-500 hover:shadow-[0_40px_80px_-15px_rgba(77,166,255,0.1)]">
+          <h3 className="text-2xl font-black leading-none text-[#1F2937] border-b border-white/40 pb-6 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary-accent w-fit">Experiment Overview</h3>
           <div className="mt-6 grid grid-cols-1 gap-y-6 sm:grid-cols-4 sm:gap-x-6">
             
             <div className="sm:col-span-2">
@@ -259,6 +326,29 @@ export default function NewExperimentV2() {
                 className="mt-2 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base text-text-primary p-2.5 border bg-white" />
             </div>
             
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-semibold text-label">Technique</label>
+              <input required type="text" name="technique" value={metadata.technique} onChange={handleMetadataChange} placeholder="Raman Spectroscopy"
+                className="mt-2 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base text-text-primary p-2.5 border bg-white" />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-semibold text-label">Session Status</label>
+              <select name="status" value={metadata.status} onChange={handleMetadataChange}
+                className="mt-2 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base text-text-primary p-2.5 border bg-white">
+                <option value="planned">Planned</option>
+                <option value="ongoing">Ongoing / In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+
+            <div className="sm:col-span-4">
+              <label className="block text-sm font-semibold text-label">Collaborators</label>
+              <input type="text" name="collaborators" value={metadata.collaborators} onChange={handleMetadataChange} placeholder="Dr. Smith, Prof. X"
+                className="mt-2 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base text-text-primary p-2.5 border bg-white" />
+            </div>
+
             <div className="sm:col-span-4">
               <label className="block text-sm font-semibold text-label">Lab / System</label>
               <input required type="text" name="lab_system" value={metadata.lab_system} onChange={handleMetadataChange} placeholder="LabRAM HR Evolution"
@@ -280,9 +370,9 @@ export default function NewExperimentV2() {
         </div>
 
         {/* Sample Card */}
-        <div className="bg-card-bg shadow-sm border border-border-custom sm:rounded-2xl p-8 transition-colors">
-          <div className="flex justify-between items-center border-b border-border-custom pb-4 mb-6">
-            <h3 className="text-xl font-semibold leading-6 text-text-primary text-accent">Sample Information</h3>
+        <div className="bg-white/70 backdrop-blur-xl shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] border border-white rounded-[2.5rem] p-10 mb-10 transition-all duration-500 hover:shadow-[0_40px_80px_-15px_rgba(77,166,255,0.1)]">
+          <div className="flex justify-between items-center border-b border-white/40 pb-6 mb-8">
+            <h3 className="text-2xl font-black leading-none text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary-accent">Sample Information</h3>
           </div>
 
           <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-6">
@@ -310,6 +400,18 @@ export default function NewExperimentV2() {
               </select>
             </div>
             
+            <div>
+              <label className="block text-sm font-semibold text-label">Dimensions</label>
+              <input type="text" name="dimensions" value={sample.dimensions || ''} onChange={handleSampleChange} placeholder="e.g. 2x2x0.5 mm"
+                className="mt-2 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base text-text-primary p-2.5 border bg-white" />
+            </div>
+            
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-semibold text-label">Preparation Notes</label>
+              <input type="text" name="preparation_notes" value={sample.preparation_notes || ''} onChange={handleSampleChange} placeholder="e.g. Cleaved in glovebox"
+                className="mt-2 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base text-text-primary p-2.5 border bg-white" />
+            </div>
+
             <div className="sm:col-span-3">
               <label className="block text-sm font-semibold text-label">Mounting, Cell & Storage Notes</label>
               <input type="text" name="mounting_notes" value={sample.mounting_notes || ''} onChange={handleSampleChange} placeholder="e.g. Loaded in symmetric DAC with Argon"
@@ -317,46 +419,15 @@ export default function NewExperimentV2() {
             </div>
             
             <div className="sm:col-span-3">
-               <label className="block text-sm font-semibold text-label mb-2">Sample Images (Microscope / Loading)</label>
-               <div className="flex flex-col gap-3">
-                 <label className="cursor-pointer text-sm font-medium text-accent hover:text-indigo-800 flex items-center bg-indigo-50/50 px-4 py-2 rounded-md border border-indigo-100 transition-colors w-fit">
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    Upload Images
-                    <input type="file" multiple className="hidden" onChange={(e) => { if(e.target.files) setSampleImages(prev => [...prev, ...Array.from(e.target.files!)]); e.target.value = ''; }} />
-                 </label>
-                 {sampleImages.length > 0 && (
-                   <div className="flex gap-4 flex-wrap mt-2">
-                     {sampleImages.map((img, i) => {
-                       const objectUrl = URL.createObjectURL(img);
-                       return (
-                         <div key={i} className="relative group">
-                           <img 
-                             src={objectUrl} 
-                             alt={`Sample upload ${i+1}`} 
-                             className="h-24 w-24 object-cover rounded-lg border border-slate-200 shadow-sm transition-transform group-hover:scale-105"
-                             onLoad={() => URL.revokeObjectURL(objectUrl)} // Clean up memory
-                           />
-                           <button 
-                             type="button" 
-                             onClick={() => setSampleImages(prev => prev.filter((_, idx) => idx !== i))} 
-                             className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-md text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
-                           >
-                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                           </button>
-                         </div>
-                       );
-                     })}
-                   </div>
-                 )}
-               </div>
+               <ImageDropzone images={sampleImages} setImages={setSampleImages} label="Sample Images (Microscope / Loading)" />
             </div>
           </div>
         </div>
 
         {/* Modules Grid */}
-        <div className="bg-slate-50/50 shadow-inner border border-slate-200 sm:rounded-2xl p-8">
-          <h3 className="text-xl font-semibold leading-6 text-text-primary border-b border-border-custom pb-4">Experimental Setup Modules</h3>
-          <p className="text-base text-text-secondary mt-2 mb-6">Enable the conditional modules relevant for this session to unhide their fields.</p>
+        <div className="bg-white/70 backdrop-blur-xl shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] border border-white rounded-[2.5rem] p-10 mb-10 transition-all duration-500 hover:shadow-[0_40px_80px_-15px_rgba(77,166,255,0.1)]">
+          <h3 className="text-2xl font-black leading-none text-[#1F2937] border-b border-white/40 pb-6 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary-accent w-fit">Experimental Setup Modules</h3>
+          <p className="text-lg text-[#6B7280] font-medium mt-4 mb-8">Enable the conditional modules relevant for this session to unhide their fields.</p>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <label className="flex items-center space-x-3 bg-white p-3.5 rounded-lg shadow-sm border border-border-custom cursor-pointer hover:border-accent hover:shadow-md transition-all">
@@ -389,15 +460,15 @@ export default function NewExperimentV2() {
         </div>
 
         {/* Experimental Datasets */}
-        <div className="bg-card-bg shadow-sm border border-border-custom sm:rounded-2xl p-8">
-           <h3 className="text-xl font-semibold leading-6 text-text-primary border-b border-border-custom pb-4">Attach Spectroscopic Scans</h3>
-           <p className="text-base text-text-secondary mt-2 mb-6">Upload data files — stored locally in your browser.</p>
+        <div className="bg-white/70 backdrop-blur-xl shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] border border-white rounded-[2.5rem] p-10 mb-10 transition-all duration-500 hover:shadow-[0_40px_80px_-15px_rgba(77,166,255,0.1)]">
+           <h3 className="text-2xl font-black leading-none text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary-accent border-b border-white/40 pb-6 mb-8">Attach Spectroscopic Scans</h3>
+           <p className="text-lg text-[#6B7280] font-medium mb-8">Upload data files — stored locally in your browser.</p>
            <DatasetUploader datasets={datasets} setDatasets={setDatasets} />
         </div>
 
         {/* Timeline Notes */}
-        <div className="bg-card-bg shadow-sm border border-border-custom sm:rounded-2xl p-8">
-           <h3 className="text-xl font-semibold leading-6 text-text-primary border-b border-border-custom pb-4">Session Notes & Images</h3>
+        <div className="bg-white/70 backdrop-blur-xl shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] border border-white rounded-[2.5rem] p-10 mb-10 transition-all duration-500 hover:shadow-[0_40px_80px_-15px_rgba(77,166,255,0.1)]">
+           <h3 className="text-2xl font-black leading-none text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary-accent border-b border-white/40 pb-6 mb-8">Session Notes & Images</h3>
            <div className="mt-4">
                <TimelineNotes 
                  timeline={timeline} 
@@ -410,8 +481,8 @@ export default function NewExperimentV2() {
         </div>
 
         {/* Reflections */}
-        <div className="bg-slate-50/50 shadow-sm border border-border-custom sm:rounded-2xl p-8">
-          <h3 className="text-xl font-semibold leading-6 text-text-primary border-b border-border-custom pb-4 text-accent">Session Reflection</h3>
+        <div className="bg-white/70 backdrop-blur-xl shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] border border-white rounded-[2.5rem] p-10 mb-10 transition-all duration-500 hover:shadow-[0_40px_80px_-15px_rgba(77,166,255,0.1)]">
+          <h3 className="text-2xl font-black leading-none text-[#1F2937] border-b border-white/40 pb-6 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary-accent w-fit">Session Reflection</h3>
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
                <label className="block text-sm font-semibold text-label">General Setup Details</label>
@@ -438,55 +509,35 @@ export default function NewExperimentV2() {
               <textarea rows={3} name="things_to_improve" value={reflection.things_to_improve || ''} onChange={handleReflectionChange}
                 className="mt-1 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base text-text-primary p-3 border bg-white" />
             </div>
+            <div className="md:col-span-2">
+               <label className="block text-sm font-semibold text-label">Final Conclusions</label>
+               <textarea rows={4} name="conclusions" value={reflection.conclusions || ''} onChange={handleReflectionChange} placeholder="What did we learn? Does it confirm the research question?"
+                 className="mt-1 block w-full rounded-md border-indigo-200 focus:border-accent focus:ring-accent text-base text-text-primary p-3 border bg-indigo-50/20" />
+            </div>
+            <div className="md:col-span-2">
+               <label className="block text-sm font-semibold text-label">Final Summary</label>
+               <textarea rows={3} name="final_summary" value={reflection.final_summary || ''} onChange={handleReflectionChange} placeholder="Brief summary of the entire session..."
+                 className="mt-1 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base text-text-primary p-3 border bg-white" />
+            </div>
             <div className="md:col-span-2 mt-2">
-               <label className="block text-sm font-semibold text-label mb-2">Final Session Images (e.g. Sample post-measurement)</label>
-               <div className="flex flex-col gap-3 mt-2">
-                 <label className="cursor-pointer text-sm font-medium text-accent hover:text-indigo-800 flex items-center bg-indigo-50/50 px-4 py-2 rounded-md border border-indigo-100 transition-colors w-fit">
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    Upload Session Images
-                    <input type="file" multiple className="hidden" onChange={(e) => { if(e.target.files) setReflectionImages(prev => [...prev, ...Array.from(e.target.files!)]); e.target.value = ''; }} />
-                 </label>
-                 {reflectionImages.length > 0 && (
-                   <div className="flex gap-4 flex-wrap mt-2">
-                     {reflectionImages.map((img, i) => {
-                       const objectUrl = URL.createObjectURL(img);
-                       return (
-                         <div key={i} className="relative group">
-                           <img 
-                             src={objectUrl} 
-                             alt={`Session upload ${i+1}`} 
-                             className="h-24 w-24 object-cover rounded-lg border border-slate-200 shadow-sm transition-transform group-hover:scale-105"
-                             onLoad={() => URL.revokeObjectURL(objectUrl)} // Clean up memory
-                           />
-                           <button 
-                             type="button" 
-                             onClick={() => setReflectionImages(prev => prev.filter((_, idx) => idx !== i))} 
-                             className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-md text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
-                           >
-                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                           </button>
-                         </div>
-                       );
-                     })}
-                   </div>
-                 )}
-               </div>
+               <ImageDropzone images={reflectionImages} setImages={setReflectionImages} label="Final Session Images (e.g. Sample post-measurement)" />
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-x-4 sticky bottom-4 z-10 bg-white/90 backdrop-blur-md p-4 rounded-xl border border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <div className="flex justify-end gap-x-6 sticky bottom-8 z-50 bg-white/40 backdrop-blur-2xl p-6 rounded-[2rem] border border-white shadow-[0_20px_50px_-15px_rgba(0,0,0,0.1)] mt-12 animate-in slide-in-from-bottom-8 duration-700">
           <button type="button" onClick={() => router.push('/')}
-            className="rounded-lg bg-white py-2.5 px-6 text-sm font-semibold text-text-primary shadow-sm border border-border-custom hover:bg-slate-50 transition-colors">
+            className="rounded-xl bg-white/50 py-3.5 px-8 text-sm font-black text-[#1F2937] uppercase tracking-widest border border-white hover:bg-white transition-all">
             Cancel
           </button>
           <button type="submit" disabled={loading}
-            className="rounded-lg bg-accent py-2.5 px-8 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus:ring-2 focus:ring-accent focus:ring-offset-2 transition-colors">
+            className="rounded-xl bg-gradient-to-r from-accent to-secondary-accent py-3.5 px-10 text-sm font-black text-white uppercase tracking-widest shadow-[0_10px_30px_-5px_rgba(77,166,255,0.4)] hover:shadow-[0_15px_35px_-5px_rgba(77,166,255,0.5)] transform hover:-translate-y-1 transition-all active:scale-95">
             {loading ? 'Saving Session...' : 'Save Raman Session'}
           </button>
         </div>
 
       </form>
+      </div>
     </div>
   );
 }

@@ -58,16 +58,39 @@ export default function LoginPage() {
       <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-center p-4 sm:p-6 lg:p-8 z-10 gap-8 lg:gap-16">
         
         {/* LEFT SIDE: Immersive Visual */}
-        <div className="hidden md:flex flex-1 relative w-full h-[600px] lg:h-[800px] items-center justify-center transition-transform duration-1000 ease-out hover:scale-[1.02]">
-          <img 
-            src="/hero-lattice-v2.png" 
-            alt="3D Crystal Lattice Illustration" 
-            className="w-full h-full object-cover mix-blend-multiply opacity-95 drop-shadow-[0_0_60px_rgba(77,166,255,0.2)]"
-            style={{ 
-              maskImage: 'radial-gradient(ellipse at center, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 80%)',
-              WebkitMaskImage: 'radial-gradient(ellipse at center, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 80%)'
-            }}
-          />
+        <div className="hidden md:flex flex-1 relative w-full h-[600px] lg:h-[800px] items-center justify-center">
+          <div className="relative w-[500px] h-[500px]">
+            {/* Main Glow Card */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-accent/20 via-secondary-accent/20 to-transparent rounded-[4rem] blur-2xl animate-pulse"></div>
+            
+            {/* Abstract Physics Circles */}
+            <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-br from-accent/40 to-secondary-accent/40 rounded-full blur-3xl animate-blob"></div>
+            <div className="absolute top-1/2 right-1/4 w-72 h-72 bg-gradient-to-tr from-indigo-400/30 to-purple-400/30 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
+            <div className="absolute bottom-1/4 left-1/3 w-56 h-56 bg-gradient-to-bl from-blue-300/40 to-cyan-300/40 rounded-full blur-3xl animate-blob animation-delay-4000"></div>
+
+            {/* Glassmorphism Content */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-12 text-center">
+              <div className="relative">
+                <div className="absolute -inset-4 bg-white/20 blur-xl rounded-full"></div>
+                <div className="relative bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-3xl shadow-2xl">
+                  <div className="w-20 h-20 mx-auto bg-gradient-to-br from-accent to-secondary-accent rounded-2xl flex items-center justify-center shadow-lg mb-6 transform -rotate-6 hover:rotate-0 transition-transform duration-500">
+                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-3xl font-bold text-slate-800 tracking-tight mb-3">AI Powered Physics</h3>
+                  <p className="text-slate-600 font-medium leading-relaxed max-w-xs">
+                    Advanced data analysis and experimental logging for the modern laboratory.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Floating Elements */}
+              <div className="absolute top-10 left-10 w-12 h-12 bg-white/40 backdrop-blur-sm rounded-xl border border-white/50 shadow-lg animate-float"></div>
+              <div className="absolute bottom-20 right-0 w-16 h-16 bg-accent/20 backdrop-blur-sm rounded-full border border-white/30 shadow-lg animate-float animation-delay-2000"></div>
+              <div className="absolute top-1/2 -left-20 w-8 h-8 bg-secondary-accent/30 backdrop-blur-sm rounded-lg border border-white/30 shadow-lg animate-float animation-delay-4000"></div>
+            </div>
+          </div>
         </div>
 
         {/* RIGHT SIDE: Login Card */}

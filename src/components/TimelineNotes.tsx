@@ -1,3 +1,5 @@
+import { ImagePreview } from './ImagePreview';
+
 export function TimelineNotes({ timeline, setTimeline, researcher, timelineImages = [], setTimelineImages = () => {} }: any) {
   
   const addEntry = () => {
@@ -122,16 +124,30 @@ export function TimelineNotes({ timeline, setTimeline, researcher, timelineImage
                     Attach Image
                     <input type="file" multiple className="hidden" onChange={(e) => handleImageUpload(index, e)} />
                  </label>
-                 {attachments.length > 0 && (
-                   <div className="flex -space-x-2 overflow-hidden">
-                     {attachments.map((img: string, i: number) => (
-                        <div key={i} className="inline-block relative group/img">
-                           <div className="h-8 w-8 rounded bg-slate-200 border border-white flex items-center justify-center text-[8px] text-slate-500 overflow-hidden" title={img}>IMG</div>
-                           <button onClick={() => removeAttachedImage(index, img)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-3 h-3 flex items-center justify-center text-[8px] opacity-0 group-hover/img:opacity-100">x</button>
-                        </div>
-                     ))}
-                   </div>
-                 )}
+                  {attachments.length > 0 && (
+                    <div className="flex gap-2 flex-wrap overflow-hidden">
+                      {attachments.map((imgName: string, i: number) => {
+                        // Find the actual File object in timelineImages state
+                        const fileObj = timelineImages.find((f: File) => f.name === imgName);
+                        return (
+                          <div key={i} className="inline-block relative group/img">
+                            {fileObj ? (
+                              <ImagePreview 
+                                file={fileObj} 
+                                alt={imgName} 
+                                className="h-10 w-10 rounded border border-slate-200 object-cover shadow-sm" 
+                              />
+                            ) : (
+                              <div className="h-10 w-10 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-[8px] text-slate-400 overflow-hidden" title={imgName}>
+                                {imgName.split('.').pop()?.toUpperCase() || 'FILE'}
+                              </div>
+                            )}
+                            <button onClick={() => removeAttachedImage(index, imgName)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] opacity-0 group-hover/img:opacity-100 shadow-sm border border-white">×</button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                </div>
             </div>
           </div>

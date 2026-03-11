@@ -8,6 +8,7 @@ import { TimelineNotes } from '@/components/TimelineNotes';
 import { DatasetUploader } from '@/components/DatasetUploader';
 import { PolarizationModule } from '@/components/PolarizationModule';
 import { getExperiment, updateExperiment, saveFile, getFilesForExperiment, deleteFile as deleteFileRecord } from '@/lib/experimentStore';
+import { ImagePreview } from '@/components/ImagePreview';
 import type { FileRecord } from '@/lib/db';
 
 export default function EditExperiment() {
@@ -74,7 +75,9 @@ export default function EditExperiment() {
     preliminary_impression: '',
     challenges_faced: '',
     things_to_improve: '',
-    things_that_worked_nicely: ''
+    things_that_worked_nicely: '',
+    final_summary: '',
+    conclusions: ''
   });
 
   // 8. Physical Files
@@ -161,6 +164,8 @@ export default function EditExperiment() {
           challenges_faced: data.challenges_faced || '',
           things_to_improve: data.things_to_improve || '',
           things_that_worked_nicely: data.things_that_worked_nicely || '',
+          final_summary: data.final_summary || '',
+          conclusions: data.conclusions || '',
         });
       } catch (e) {
         console.error(e);
@@ -296,13 +301,29 @@ export default function EditExperiment() {
   );
 
   return (
-    <div className="max-w-5xl mx-auto pb-12">
-      <div className="md:flex md:items-center md:justify-between mb-8">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-3xl font-bold text-text-primary tracking-tight">Edit Raman Experiment Session</h2>
-          <p className="mt-2 text-base text-text-secondary">Update your experiment data — saved locally.</p>
-        </div>
+    <div className="max-w-7xl mx-auto pb-20 relative px-4 sm:px-6 lg:px-8">
+      {/* Mesh Background for Edit Page */}
+      <div className="absolute inset-x-0 -top-24 -bottom-24 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[5%] left-[-10%] w-[50%] h-[50%] bg-accent/5 blur-[120px] rounded-full animate-blob"></div>
+        <div className="absolute top-[30%] right-[-10%] w-[45%] h-[45%] bg-secondary-accent/5 blur-[100px] rounded-full animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-[10%] left-[15%] w-[40%] h-[40%] bg-tertiary-accent/5 blur-[80px] rounded-full animate-blob animation-delay-4000"></div>
       </div>
+
+      <div className="relative z-10 pt-12">
+        <div className="md:flex md:items-end md:justify-between mb-16 pb-12 border-b border-white/40">
+          <div className="min-w-0 flex-1 animate-in fade-in slide-in-from-left-4 duration-1000">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-accent/20">
+              Session Refinement
+            </span>
+            <h2 className="text-5xl sm:text-7xl font-black leading-[0.9] text-[#1F2937] sm:truncate tracking-tight">
+              Edit <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary-accent">Experiment</span>
+            </h2>
+            <p className="mt-8 text-xl text-[#6B7280] font-medium max-w-xl">
+              Modify your campaign parameters and observation logs. <span className="text-accent underline decoration-accent/30 underline-offset-8">Synching to local vault.</span>
+            </p>
+          </div>
+        </div>
 
       {error && (
         <div className="rounded-xl bg-red-50/50 p-4 mb-6 border border-red-200">
@@ -313,8 +334,8 @@ export default function EditExperiment() {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Core Metadata */}
-        <div className="bg-card-bg shadow-sm border border-border-custom sm:rounded-2xl p-8">
-          <h3 className="text-xl font-semibold leading-6 text-accent border-b border-border-custom pb-4">Experiment Overview</h3>
+        <div className="bg-white/70 backdrop-blur-xl shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] border border-white rounded-[2.5rem] p-10 mb-10 transition-all duration-500 hover:shadow-[0_40px_80px_-15px_rgba(77,166,255,0.1)]">
+          <h3 className="text-2xl font-black leading-none text-[#1F2937] border-b border-white/40 pb-6 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary-accent w-fit">Experiment Overview</h3>
           <div className="mt-6 grid grid-cols-1 gap-y-6 sm:grid-cols-4 sm:gap-x-6">
             <div className="sm:col-span-2">
               <label className="block text-sm font-semibold text-label">Project Title</label>
@@ -323,7 +344,19 @@ export default function EditExperiment() {
             <div><label className="block text-sm font-semibold text-label">Date</label><input required type="date" name="date" value={metadata.date} onChange={handleMetadataChange} className="mt-2 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-2.5 border bg-white" /></div>
             <div><label className="block text-sm font-semibold text-label">Time</label><input required type="time" name="start_time" step="1" value={metadata.start_time} onChange={handleMetadataChange} className="mt-2 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-2.5 border bg-white" /></div>
             <div className="sm:col-span-2"><label className="block text-sm font-semibold text-label">Lead Researcher</label><input required type="text" name="researcher" value={metadata.researcher} onChange={handleMetadataChange} className="mt-2 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-2.5 border bg-white" /></div>
-            <div className="sm:col-span-2"><label className="block text-sm font-semibold text-label">Research Categories (comma separated)</label><input type="text" name="tags" value={metadata.tags} onChange={handleMetadataChange} placeholder="high-pressure, DAC, raman" className="mt-2 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-2.5 border bg-white" /></div>
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-semibold text-label">Technique</label>
+              <input required type="text" name="technique" value={metadata.technique} onChange={handleMetadataChange} className="mt-2 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-2.5 border bg-white" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-semibold text-label">Status</label>
+              <select name="status" value={metadata.status} onChange={handleMetadataChange} className="mt-2 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-2.5 border bg-white">
+                <option value="planned">Planned</option>
+                <option value="ongoing">Ongoing</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+            <div className="sm:col-span-4"><label className="block text-sm font-semibold text-label">Collaborators</label><input type="text" name="collaborators" value={metadata.collaborators} onChange={handleMetadataChange} className="mt-2 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-2.5 border bg-white" /></div>
             <div className="sm:col-span-4"><label className="block text-sm font-semibold text-label">Lab / System</label><input required type="text" name="lab_system" value={metadata.lab_system} onChange={handleMetadataChange} className="mt-2 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-2.5 border bg-white" /></div>
             <div className="sm:col-span-4"><label className="block text-sm font-semibold text-label">Short Objective</label><input required type="text" name="objective_short" value={metadata.objective_short} onChange={handleMetadataChange} className="mt-2 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-2.5 border bg-white" /></div>
             <div className="sm:col-span-4"><label className="block text-sm font-semibold text-label">Motivation</label><textarea required rows={3} name="motivation" value={metadata.motivation} onChange={handleMetadataChange} className="mt-2 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-3 border bg-white" /></div>
@@ -331,8 +364,8 @@ export default function EditExperiment() {
         </div>
 
         {/* Sample */}
-        <div className="bg-card-bg shadow-sm border border-border-custom sm:rounded-2xl p-8">
-          <h3 className="text-xl font-semibold text-accent border-b border-border-custom pb-4 mb-6">Sample Information</h3>
+        <div className="bg-white/70 backdrop-blur-xl shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] border border-white rounded-[2.5rem] p-10 mb-10 transition-all duration-500 hover:shadow-[0_40px_80px_-15px_rgba(77,166,255,0.1)]">
+          <h3 className="text-2xl font-black leading-none text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary-accent border-b border-white/40 pb-6 mb-8">Sample Information</h3>
           <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-6">
             <div><label className="block text-sm font-semibold text-label">Sample Name</label><input required type="text" name="sample_name" value={sample.sample_name} onChange={handleSampleChange} className="mt-2 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-2.5 border bg-white" /></div>
             <div><label className="block text-sm font-semibold text-label">Formula</label><input type="text" name="chemical_formula" value={sample.chemical_formula} onChange={handleSampleChange} className="mt-2 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-2.5 border bg-white" /></div>
@@ -368,12 +401,12 @@ export default function EditExperiment() {
                 {sampleImages.length > 0 && (
                   <div className="flex gap-2 flex-wrap">
                     {sampleImages.map((img, i) => (
-                      <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-slate-200 text-xs text-slate-600 shadow-sm">
-                        <span className="truncate max-w-[120px]">{img.name}</span>
-                        <button type="button" onClick={() => setSampleImages(prev => prev.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-500 transition-colors">
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                      <div key={i} className="relative group rounded-md border border-slate-200 overflow-hidden h-16 w-16">
+                        <ImagePreview file={img} alt={img.name} className="object-cover h-full w-full" />
+                        <button type="button" onClick={() => setSampleImages(prev => prev.filter((_, idx) => idx !== i))} className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
-                      </span>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -383,8 +416,8 @@ export default function EditExperiment() {
         </div>
 
         {/* Modules */}
-        <div className="bg-slate-50/50 shadow-inner border border-slate-200 sm:rounded-2xl p-8">
-          <h3 className="text-xl font-semibold border-b border-border-custom pb-4">Setup Modules</h3>
+        <div className="bg-white/70 backdrop-blur-xl shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] border border-white rounded-[2.5rem] p-10 mb-10 transition-all duration-500 hover:shadow-[0_40px_80px_-15px_rgba(77,166,255,0.1)]">
+          <h3 className="text-2xl font-black leading-none text-[#1F2937] border-b border-white/40 pb-6 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary-accent w-fit">Setup Modules</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 mb-8">
             <label className="flex items-center space-x-3 bg-white p-3.5 rounded-lg shadow-sm border border-border-custom cursor-pointer hover:border-accent transition-all"><input type="checkbox" checked={modules.temperature_enabled} onChange={() => toggleModule('temperature_enabled')} className="form-checkbox h-5 w-5 text-accent rounded" /><span className="font-semibold">Temperature</span></label>
             <label className="flex items-center space-x-3 bg-white p-3.5 rounded-lg shadow-sm border border-border-custom cursor-pointer hover:border-accent transition-all"><input type="checkbox" checked={modules.pressure_enabled} onChange={() => toggleModule('pressure_enabled')} className="form-checkbox h-5 w-5 text-accent rounded" /><span className="font-semibold">Pressure</span></label>
@@ -399,27 +432,35 @@ export default function EditExperiment() {
         </div>
 
         {/* Datasets */}
-        <div className="bg-card-bg shadow-sm border border-border-custom sm:rounded-2xl p-8">
-          <h3 className="text-xl font-semibold border-b border-border-custom pb-4">Datasets</h3>
+        <div className="bg-white/70 backdrop-blur-xl shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] border border-white rounded-[2.5rem] p-10 mb-10 transition-all duration-500 hover:shadow-[0_40px_80px_-15px_rgba(77,166,255,0.1)]">
+          <h3 className="text-2xl font-black leading-none text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary-accent border-b border-white/40 pb-6 mb-8">Datasets</h3>
           <p className="text-base text-text-secondary mt-2 mb-6">Manage attached data files.</p>
           <DatasetUploader datasets={datasets} setDatasets={setDatasets} />
         </div>
 
         {/* Timeline */}
-        <div className="bg-card-bg shadow-sm border border-border-custom sm:rounded-2xl p-8">
-          <h3 className="text-xl font-semibold border-b border-border-custom pb-4">Session Notes</h3>
+        <div className="bg-white/70 backdrop-blur-xl shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] border border-white rounded-[2.5rem] p-10 mb-10 transition-all duration-500 hover:shadow-[0_40px_80px_-15px_rgba(77,166,255,0.1)]">
+          <h3 className="text-2xl font-black leading-none text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary-accent border-b border-white/40 pb-6 mb-8">Session Notes</h3>
           <div className="mt-4"><TimelineNotes timeline={timeline} setTimeline={setTimeline} researcher={metadata.researcher} timelineImages={timelineImages} setTimelineImages={setTimelineImages} /></div>
         </div>
 
         {/* Reflections */}
-        <div className="bg-slate-50/50 shadow-sm border border-border-custom sm:rounded-2xl p-8">
-          <h3 className="text-xl font-semibold text-accent border-b border-border-custom pb-4">Reflection</h3>
+        <div className="bg-white/70 backdrop-blur-xl shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] border border-white rounded-[2.5rem] p-10 mb-10 transition-all duration-500 hover:shadow-[0_40px_80px_-15px_rgba(77,166,255,0.1)]">
+          <h3 className="text-2xl font-black leading-none text-[#1F2937] border-b border-white/40 pb-6 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary-accent w-fit">Reflection</h3>
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="md:col-span-2"><label className="block text-sm font-semibold text-label">Setup Notes</label><textarea rows={2} name="general_setup_notes" value={reflection.general_setup_notes} onChange={handleReflectionChange} className="mt-1 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-3 border bg-white" /></div>
+            <div className="md:col-span-2"><label className="block text-sm font-semibold text-label">General Setup Details</label><textarea rows={2} name="general_setup_notes" value={reflection.general_setup_notes} onChange={handleReflectionChange} className="mt-1 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-3 border bg-white" /></div>
             <div><label className="block text-sm font-semibold text-label">Impressions</label><textarea rows={3} name="preliminary_impression" value={reflection.preliminary_impression} onChange={handleReflectionChange} className="mt-1 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-3 border bg-white" /></div>
             <div><label className="block text-sm font-semibold text-label">Challenges</label><textarea rows={3} name="challenges_faced" value={reflection.challenges_faced} onChange={handleReflectionChange} className="mt-1 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-3 border bg-white" /></div>
             <div><label className="block text-sm font-semibold text-label">What Worked</label><textarea rows={3} name="things_that_worked_nicely" value={reflection.things_that_worked_nicely} onChange={handleReflectionChange} className="mt-1 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-3 border bg-white" /></div>
             <div><label className="block text-sm font-semibold text-label">Improvements</label><textarea rows={3} name="things_to_improve" value={reflection.things_to_improve} onChange={handleReflectionChange} className="mt-1 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-3 border bg-white" /></div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-label">Conclusions</label>
+              <textarea rows={4} name="conclusions" value={reflection.conclusions} onChange={handleReflectionChange} className="mt-1 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-3 border bg-white" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-label">Final Summary</label>
+              <textarea rows={3} name="final_summary" value={reflection.final_summary} onChange={handleReflectionChange} className="mt-1 block w-full rounded-md border-border-custom focus:border-accent focus:ring-accent text-base p-3 border bg-white" />
+            </div>
             <div className="md:col-span-2 mt-2">
               <label className="block text-sm font-semibold text-label mb-2">Session Images</label>
               
@@ -446,12 +487,12 @@ export default function EditExperiment() {
                 {reflectionImages.length > 0 && (
                   <div className="flex gap-2 flex-wrap">
                     {reflectionImages.map((img, i) => (
-                      <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-slate-200 text-xs text-slate-600 shadow-sm">
-                        <span className="truncate max-w-[120px]">{img.name}</span>
-                        <button type="button" onClick={() => setReflectionImages(prev => prev.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-500 transition-colors">
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                      <div key={i} className="relative group rounded-md border border-slate-200 overflow-hidden h-16 w-16">
+                        <ImagePreview file={img} alt={img.name} className="object-cover h-full w-full" />
+                        <button type="button" onClick={() => setReflectionImages(prev => prev.filter((_, idx) => idx !== i))} className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
-                      </span>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -460,13 +501,18 @@ export default function EditExperiment() {
           </div>
         </div>
 
-        <div className="flex justify-end gap-x-4 sticky bottom-4 z-10 bg-white/90 backdrop-blur-md p-4 rounded-xl border border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-          <button type="button" onClick={() => router.push(`/experiment/${id}`)} className="rounded-lg bg-white py-2.5 px-6 text-sm font-semibold shadow-sm border border-border-custom hover:bg-slate-50 transition-colors">Cancel</button>
-          <button type="submit" disabled={loading} className="rounded-lg bg-accent py-2.5 px-8 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors">
+        <div className="flex justify-end gap-x-6 sticky bottom-8 z-50 bg-white/40 backdrop-blur-2xl p-6 rounded-[2rem] border border-white shadow-[0_20px_50px_-15px_rgba(0,0,0,0.1)] mt-12 animate-in slide-in-from-bottom-8 duration-700">
+          <button type="button" onClick={() => router.push(`/experiment/${id}`)} 
+                  className="rounded-xl bg-white/50 py-3.5 px-8 text-sm font-black text-[#1F2937] uppercase tracking-widest border border-white hover:bg-white transition-all">
+            Cancel
+          </button>
+          <button type="submit" disabled={loading} 
+                  className="rounded-xl bg-gradient-to-r from-accent to-secondary-accent py-3.5 px-10 text-sm font-black text-white uppercase tracking-widest shadow-[0_10px_30px_-5px_rgba(77,166,255,0.4)] hover:shadow-[0_15px_35px_-5px_rgba(77,166,255,0.5)] transform hover:-translate-y-1 transition-all active:scale-95">
             {loading ? 'Saving...' : 'Update Session'}
           </button>
         </div>
       </form>
+      </div>
     </div>
   );
 }

@@ -65,7 +65,7 @@ export default function RootLayout({
         <title>Gravity - AI Physics Logbook</title>
         <meta name="description" content="AI-assisted experimental logbook for scientific research." />
       </head>
-      <body className={`${inter.className} bg-slate-100 text-slate-900 min-h-screen`}>
+      <body className={`${inter.className} bg-white text-slate-900 min-h-screen`}>
         <AuthProvider>
           <AuthGuard>
             {children}

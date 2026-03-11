@@ -1,15 +1,19 @@
-import { db, type ExperimentRecord, type FileRecord } from './db';
+import { db, type ExperimentRecord, type FileRecord, type DatasetRecord } from './db';
 
 // ─── Experiment CRUD ─────────────────────────────────────────────
 
 /** Create a new experiment. Returns the auto-generated ID. */
 export async function createExperiment(data: Omit<ExperimentRecord, 'id' | 'created_at' | 'updated_at'>): Promise<number> {
   const now = new Date().toISOString();
-  return db.experiments.add({
-    ...data,
-    created_at: now,
-    updated_at: now,
-  } as ExperimentRecord);
+  
+  // Create experiment entirely within a transaction
+  return db.transaction('rw', db.experiments, async () => {
+    return await db.experiments.add({
+      ...data,
+      created_at: now,
+      updated_at: now,
+    } as Omit<ExperimentRecord, 'id'>);
+  });
 }
 
 /** Get all experiments for a user, newest first. */
@@ -48,8 +52,11 @@ export async function updateExperiment(
 export async function deleteExperiment(experimentId: string): Promise<void> {
   const existing = await getExperiment(experimentId);
   if (!existing || !existing.id) return;
-  await db.files.where('experimentId').equals(existing.id).delete();
-  await db.experiments.delete(existing.id);
+  await db.transaction('rw', db.experiments, db.images, db.datasets, async () => {
+    await db.images.where({ experiment_id: experimentId }).delete();
+    await db.datasets.where({ experiment_id: experimentId }).delete();
+    await db.experiments.delete(existing.id!);
+  });
 }
 
 // ─── File CRUD ───────────────────────────────────────────────────
@@ -61,28 +68,65 @@ export async function saveFile(
   category: string,
   file: File
 ): Promise<number> {
-  return db.files.add({
-    experimentId,
-    experiment_id,
-    category,
-    fileName: file.name,
-    mimeType: file.type,
-    blob: file,
-    createdAt: new Date().toISOString(),
-  });
+  if (category === 'dataset') {
+    // Process text-based dataset
+    let parsedData: any[] = [];
+    let rawText = '';
+    
+    // We only try to read text files
+    if (file.name.match(/\.(txt|csv|dat|asc)$/i)) {
+      rawText = await file.text();
+      const lines = rawText.split('\n');
+      for (const line of lines) {
+        const parts = line.trim().split(/[\s,;]+/);
+        if (parts.length >= 2) {
+          const x = parseFloat(parts[0]);
+          const y = parseFloat(parts[1]);
+          if (!isNaN(x) && !isNaN(y)) {
+            parsedData.push({ x, y });
+          }
+        }
+      }
+    }
+    
+    return db.transaction('rw', db.datasets, async () => {
+      return await db.datasets.add({
+        experiment_id,
+        category,
+        fileName: file.name,
+        rawText,
+        parsedData,
+        createdAt: new Date().toISOString(),
+      });
+    });
+  } else {
+    return db.transaction('rw', db.images, async () => {
+      return await db.images.add({
+        experiment_id,
+        category,
+        fileName: file.name,
+        mimeType: file.type,
+        blob: file,
+        createdAt: new Date().toISOString(),
+      });
+    });
+  }
 }
 
 /** Get a single file record by ID. */
 export async function getFile(id: number): Promise<FileRecord | undefined> {
-  return db.files.get(id);
+  return db.images.get(id);
 }
 
 /** Get all files for an experiment. */
 export async function getFilesForExperiment(
-  experimentId: number,
-  category?: string
+  experimentId: number, // Legacy argument
+  category?: string,
+  experiment_id?: string
 ): Promise<FileRecord[]> {
-  let collection = db.files.where('experimentId').equals(experimentId);
+  if (!experiment_id) return []; // We require experiment_id in the new schema
+  
+  let collection = db.images.where('experiment_id').equals(experiment_id);
   const all = await collection.toArray();
   if (category) return all.filter(f => f.category === category);
   return all;
@@ -90,18 +134,26 @@ export async function getFilesForExperiment(
 
 /** Delete a single file by ID. */
 export async function deleteFile(id: number): Promise<void> {
-  await db.files.delete(id);
+  await db.images.delete(id);
 }
 
 /** Delete all files for an experiment in a specific category. */
 export async function deleteFilesByCategory(
   experimentId: number,
-  category: string
+  category: string,
+  experiment_id: string
 ): Promise<number> {
-  const files = await getFilesForExperiment(experimentId, category);
-  const ids = files.map(f => f.id!).filter(Boolean);
-  await db.files.bulkDelete(ids);
-  return ids.length;
+  if (category === 'dataset') {
+    const files = await db.datasets.where('experiment_id').equals(experiment_id).toArray();
+    const ids = files.map(f => f.id!).filter(Boolean);
+    await db.datasets.bulkDelete(ids);
+    return ids.length;
+  } else {
+    const files = await getFilesForExperiment(experimentId, category, experiment_id);
+    const ids = files.map(f => f.id!).filter(Boolean);
+    await db.images.bulkDelete(ids);
+    return ids.length;
+  }
 }
 
 // ─── Search ──────────────────────────────────────────────────────
@@ -174,11 +226,12 @@ export async function getExperimentsForAI(userId: string): Promise<Record<string
 /** Export the entire logbook (experiments and files) as a JSON-serializable object. */
 export async function exportLogbook(): Promise<string> {
   const experiments = await db.experiments.toArray();
-  const files = await db.files.toArray();
+  const images = await db.images.toArray();
+  const datasets = await db.datasets.toArray();
 
   // Convert Blobs to base64 strings for JSON serialization
   const fileData = await Promise.all(
-    files.map(async (f) => {
+    images.map(async (f) => {
       const reader = new FileReader();
       const base64 = await new Promise<string>((resolve) => {
         reader.onloadend = () => resolve(reader.result as string);
@@ -189,10 +242,11 @@ export async function exportLogbook(): Promise<string> {
   );
 
   const data = {
-    version: 1,
+    version: 2,
     exportDate: new Date().toISOString(),
     experiments,
-    files: fileData,
+    images: fileData,
+    datasets,
   };
 
   return JSON.stringify(data);
@@ -201,43 +255,67 @@ export async function exportLogbook(): Promise<string> {
 /** Import logbook data from a JSON string. */
 export async function importLogbook(jsonString: string): Promise<void> {
   const data = JSON.parse(jsonString);
-  if (!data.experiments || !data.files) throw new Error('Invalid logbook data');
+  if (!data.experiments) throw new Error('Invalid logbook data');
 
-  await db.transaction('rw', [db.experiments, db.files], async () => {
-    // Clear existing data? Spec doesn't say, but usually safer to merge or clear.
-    // Let's merge by checking experiment_id.
-    
-    for (const exp of data.experiments) {
-      const { id, ...expData } = exp;
-      const existing = await db.experiments.where('experiment_id').equals(exp.experiment_id).first();
-      let internalId: number;
-      if (existing && existing.id) {
-        await db.experiments.update(existing.id, expData);
-        internalId = existing.id;
-      } else {
-        internalId = await db.experiments.add(expData);
-      }
+  // Handle version 1 migration structure where we had 'files'
+  const inImages = data.images || (data.files ? data.files.filter((f: any) => f.category !== 'dataset') : []);
+  const inDatasets = data.datasets || [];
 
-      // Match files for this experiment
-      const expFiles = data.files.filter((f: any) => f.experiment_id === exp.experiment_id);
-      for (const f of expFiles) {
-        const { id: fid, experimentId: feid, blob: base64, ...fileMetadata } = f;
-        
-        // Convert base64 back to Blob
+  const processedFiles = await Promise.all(
+    inImages.map(async (f: any) => {
+      const { blob: base64, ...fileMetadata } = f;
+      try {
         const res = await fetch(base64);
         const blob = await res.blob();
-
-        const existingFile = await db.files
-          .where('experiment_id').equals(exp.experiment_id)
-          .and(x => x.fileName === f.fileName && x.category === f.category)
-          .first();
-
-        if (existingFile && existingFile.id) {
-          await db.files.update(existingFile.id, { ...fileMetadata, blob, experimentId: internalId });
-        } else {
-          await db.files.add({ ...fileMetadata, blob, experimentId: internalId });
-        }
+        return { ...fileMetadata, blob };
+      } catch (err) {
+        console.error(`Failed to process file ${f.fileName}:`, err);
+        return { ...fileMetadata, blob: new Blob([]) };
       }
+    })
+  );
+
+  await db.transaction('rw', [db.experiments, db.images, db.datasets], async () => {
+    // 1. Process experiments
+    for (const exp of data.experiments) {
+      const { id, ...expData } = exp;
+      
+      const existingExp = await db.experiments.where('experiment_id').equals(exp.experiment_id).first();
+      let internalId: number;
+      if (existingExp && existingExp.id) {
+         await db.experiments.update(existingExp.id, expData);
+         internalId = existingExp.id;
+      } else {
+         internalId = await db.experiments.add(expData as Omit<ExperimentRecord, 'id'>);
+      }
+    }
+
+    // 2. Process images
+    for (const img of processedFiles) {
+       const existingImg = await db.images
+         .where({ experiment_id: img.experiment_id })
+         .and(x => x.fileName === img.fileName && x.category === img.category)
+         .first();
+       
+       if (existingImg && existingImg.id) {
+         await db.images.update(existingImg.id, img);
+       } else {
+         await db.images.add(img);
+       }
+    }
+
+    // 3. Process datasets
+    for (const ds of inDatasets) {
+       const existingDs = await db.datasets
+         .where({ experiment_id: ds.experiment_id })
+         .and(x => x.fileName === ds.fileName)
+         .first();
+       
+       if (existingDs && existingDs.id) {
+         await db.datasets.update(existingDs.id, ds);
+       } else {
+         await db.datasets.add(ds);
+       }
     }
   });
 }
