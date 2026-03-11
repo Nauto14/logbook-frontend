@@ -188,12 +188,14 @@ export default function AIAssistant() {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask a question about your experiments..."
-          className="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-text-primary placeholder:text-text-secondary focus:border-indigo-300 focus:ring-1 focus:ring-indigo-300 transition-colors text-sm"
+          placeholder="AI Assistant is currently under development and will be available soon."
+          className="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-text-primary placeholder:text-text-secondary focus:border-indigo-300 focus:ring-1 focus:ring-indigo-300 transition-colors text-sm cursor-not-allowed opacity-70"
+          disabled={true}
         />
         <button
           type="submit"
-          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-accent to-secondary-accent text-white font-semibold text-sm shadow-sm hover:shadow-md transition-all active:scale-95"
+          disabled={true}
+          className="px-5 py-2.5 rounded-xl bg-slate-300 text-white font-semibold text-sm shadow-sm cursor-not-allowed transition-all"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
